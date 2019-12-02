@@ -103,6 +103,7 @@ defmodule OneTest do
   148481
   114584
   """
+
   test "solution" do
     assert One.solution(@input, false) == 3_315_383
     # 4970206
