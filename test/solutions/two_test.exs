@@ -12,14 +12,16 @@ defmodule TwoTest do
     assert Two.solve(@input, {12, 2}) == 6568671
   end
 
+  # I originally did not use `Enum.find` and `for` comprehensions here, but I wanted to speed it
+  # up by short circuitng when the solution was found.
   test "p2" do
-    Enum.each((0..99), fn noun ->
-      Enum.each((0..99), fn verb ->
-        if Two.solve(@input, {noun, verb}) == 19690720 do
-          # IO.inspect 100 * noun + verb
-          assert 100 * noun + verb == 3951
-        end
-      end)
+    iterable = for noun <- (0..99), verb <- (0..99), into: [], do: {noun, verb}
+
+    Enum.find(iterable, fn {noun, verb} ->
+      if Two.solve(@input, {noun, verb}) == 19690720 do
+        # IO.inspect 100 * noun + verb
+        assert 100 * noun + verb == 3951
+      end
     end)
   end
 end
