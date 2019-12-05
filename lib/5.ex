@@ -17,7 +17,7 @@ defmodule Five do
       instr -> {instr, {:p, :p, :p}}
     end
 
-    debug({instr, modes}, charlists: :as_lists)
+    debug({instr, modes})
     process(instr, p, i, modes)
   end
 
@@ -43,16 +43,46 @@ defmodule Five do
     end
   end
 
+  # Add
+  def process([1, p1, p2, r], positions, index, {first_m, second_m, _third_m}) do
+    p1_v = value(positions, p1, first_m)
+    p2_v = value(positions, p2, second_m)
+
+    result = Map.put(positions, r, p1_v + p2_v)
+
+    processor(result, index + 4)
+  end
+
+  # Multiple
+  def process([2, p1, p2, r], positions, index, {first_m, second_m, _third_m}) do
+    p1_v = value(positions, p1, first_m)
+    p2_v = value(positions, p2, second_m)
+
+    result = Map.put(positions, r, p1_v * p2_v)
+
+    processor(result, index + 4)
+  end
+
+  # Input
+  def process([3, p], positions, index, _) do
+    val = Process.get(:test_input) |> String.trim() |> String.to_integer()
+    result = Map.put(positions, p, val)
+
+    processor(result, index + 2)
+  end
+
+  # Output
+  def process([4, p1], positions, index, {first_m, _second_m, _third_m}) do
+    p1_v = value(positions, p1, first_m)
+    Logger.info "Output: #{p1_v}"
+
+    processor(positions, index + 2)
+  end
+
   # jump-if-true
   def process([5, p1, p2], positions, index, {first_m, second_m, _}) do
-    p1_v = case first_m do
-      :p -> Map.get(positions, p1, 0)
-      :i -> p1
-    end
-    p2_v = case second_m do
-      :p -> Map.get(positions, p2, 0)
-      :i -> p2
-    end
+    p1_v = value(positions, p1, first_m)
+    p2_v = value(positions, p2, second_m)
 
     next = if p1_v != 0 do
       p2_v
@@ -65,14 +95,8 @@ defmodule Five do
 
   # jump-if-false
   def process([6, p1, p2], positions, index, {first_m, second_m, _}) do
-    p1_v = case first_m do
-      :p -> Map.get(positions, p1, 0)
-      :i -> p1
-    end
-    p2_v = case second_m do
-      :p -> Map.get(positions, p2, 0)
-      :i -> p2
-    end
+    p1_v = value(positions, p1, first_m)
+    p2_v = value(positions, p2, second_m)
 
     next = if p1_v == 0 do
       p2_v
@@ -85,14 +109,8 @@ defmodule Five do
 
   # less-than
   def process([7, p1, p2, p3], positions, index, {first_m, second_m, _third_m}) do
-    p1_v = case first_m do
-      :p -> Map.get(positions, p1, 0)
-      :i -> p1
-    end
-    p2_v = case second_m do
-      :p -> Map.get(positions, p2, 0)
-      :i -> p2
-    end
+    p1_v = value(positions, p1, first_m)
+    p2_v = value(positions, p2, second_m)
 
     result = if p1_v < p2_v do
       Map.put(positions, p3, 1)
@@ -105,14 +123,8 @@ defmodule Five do
 
   # equals
   def process([8, p1, p2, p3], positions, index, {first_m, second_m, _third_m}) do
-    p1_v = case first_m do
-      :p -> Map.get(positions, p1, 0)
-      :i -> p1
-    end
-    p2_v = case second_m do
-      :p -> Map.get(positions, p2, 0)
-      :i -> p2
-    end
+    p1_v = value(positions, p1, first_m)
+    p2_v = value(positions, p2, second_m)
 
     result = if p1_v == p2_v do
       Map.put(positions, p3, 1)
@@ -123,73 +135,14 @@ defmodule Five do
     processor(result, index + 4)
   end
 
-  # Add
-  def process([1, p1, p2, r], positions, index, {first_m, second_m, _third_m}) do
-    debug({:add, p1, p2, r})
-    p1_v = case first_m do
-      :p -> Map.get(positions, p1, 0)
-      :i -> p1
-    end
-
-    p2_v = case second_m do
-      :p -> Map.get(positions, p2, 0)
-      :i -> p2
-    end
-
-    result = Map.put(positions, r, p1_v + p2_v)
-
-    processor(result, index + 4)
-  end
-
-  # Multiple
-  def process([2, p1, p2, r], positions, index, {first_m, second_m, _third_m}) do
-    debug({:mult, p1, p2, r})
-
-    p1_v = case first_m do
-      :p -> Map.get(positions, p1, 0)
-      :i -> p1
-    end
-
-    p2_v = case second_m do
-      :p -> Map.get(positions, p2, 0)
-      :i -> p2
-    end
-
-    result = Map.put(positions, r, p1_v * p2_v)
-
-    processor(result, index + 4)
-  end
-
-  # Input
-  def process([3, p], positions, index, _) do
-    debug({:input, p})
-
-    val = Process.get(:test_input) |> String.trim() |> String.to_integer()
-    result = Map.put(positions, p, val)
-
-    processor(result, index + 2)
-  end
-
-  # Output
-  def process([4, p1], positions, index, {first_m, _second_m, _third_m}) do
-    debug({:output, p1})
-    p1_v = case first_m do
-      :p -> Map.get(positions, p1, 0)
-      :i -> p1
-    end
-
-    Logger.info "Output: #{p1_v}"
-
-    processor(positions, index + 2)
-  end
-
-  def process([99], positions, index, {_, _, _}) do
-    debug(:done)
-
+  def process([99], positions, _index, {_, _, _}) do
     Map.get(positions, 0)
   end
 
-  def debug(terms, opts \\ []) do
-    # IO.inspect(terms, opts)
+  def value(positions, p, :p), do: Map.get(positions, p, 0)
+  def value(_positions, p, :i), do: p
+
+  def debug(_terms) do
+    # IO.inspect(terms, charlists: :as_lists)
   end
 end
