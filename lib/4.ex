@@ -7,23 +7,7 @@ defmodule Four do
   end
 
   def is_match?(number, adjacent \\ true) do
-    a = rem(number, 10)
-    number = div(number, 10)
-
-    b = rem(number, 10)
-    number = div(number, 10)
-
-    c = rem(number, 10)
-    number = div(number, 10)
-
-    d = rem(number, 10)
-    number = div(number, 10)
-
-    e = rem(number, 10)
-    number = div(number, 10)
-
-    f = rem(number, 10)
-    number = div(number, 10)
+    [f, e, d, c, b, a] = Integer.digits(number)
 
     monotonic = f <= e && e <= d && d <= c && c <= b && b <= a
 
