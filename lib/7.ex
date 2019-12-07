@@ -32,31 +32,6 @@ defmodule Seven do
     {Enum.join(pattern), value}
   end
 
-  def solve_2_trash(input) do
-    {pattern, [value | _]} =
-      Enum.map([["9","8","7","6","5"]], fn process_input ->
-        {
-          process_input,
-          Enum.reduce(process_input, {[], %{}}, fn test_input, {acc, val} ->
-            previous = List.first(acc) || "0"
-
-            Process.put(:test_input, [test_input, previous])
-            Process.put(:input_curr, 0)
-            Process.delete(:curr_output)
-
-            computer(input)
-
-            output = Process.get(:curr_output) |> List.first()
-            [output | acc]
-          end)
-        }
-      end)
-      |> IO.inspect()
-      |> Enum.max_by(fn {_, [num | _]} -> String.to_integer(num) end)
-
-    {Enum.join(pattern), value}
-  end
-
   def solve_2(input) do
     {pattern, value} =
       Enum.map(@feedback, fn process_input = [a, b, c, d, e] ->
@@ -70,7 +45,6 @@ defmodule Seven do
       |> Enum.max_by(fn {_, num} -> String.to_integer(num) end)
 
     {Enum.join(pattern), value}
-
   end
 
   def engage_thrusters(program, curr_program, inputs, states) do
