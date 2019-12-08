@@ -51,6 +51,6 @@ defmodule Eight do
   end
 
   defp layers(input, w, h) do
-    String.split(input, "") |> Enum.drop(1) |> Enum.drop(-1) |> Enum.chunk_every(w * h)
+    String.graphemes(input) |> Enum.chunk_every(w * h)
   end
 end
