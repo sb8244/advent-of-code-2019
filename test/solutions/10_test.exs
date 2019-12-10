@@ -69,6 +69,7 @@ defmodule TenTest do
     assert Ten.solve(@input) == {{23, 20}, 334}
   end
 
+  # I manually inspected the output here
   # test "pt2 example" do
   #   input = String.trim("""
   #   .#..##.###...#######

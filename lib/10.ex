@@ -1,4 +1,14 @@
 defmodule Ten do
+  @moduledoc """
+  Part 1 solves this in a brute force manner. It expands each asteroid location looking for asteroids it can see, via delta
+  changes. Once it sees one, everything else in that expansion is marked as hidden. The final result is the differences between
+  what it can see and what is hidden, sorted.
+
+  Part 2 actually uses math. The degree between 2 points is calculated using atan formula I found online. Then the reduction
+  starts at degree 269.9999 (close to 270, which is north). The reduction sorts all asteroids by the difference between their to-station
+  degree and the last known angle. It adds 360 to the angle when it "comes around", so it will loop correctly.
+  """
+
   def solve(input) do
     {map, _} =
       String.split(input, "\n")
