@@ -1,4 +1,4 @@
-defmodule Nine do
+defmodule Eleven do
   def computer(list) do
     Process.delete(:curr_output)
     nums = String.split(list, ",") |> Enum.map(&String.to_integer/1)
@@ -34,6 +34,7 @@ defmodule Nine do
       99 -> [99]
       custom ->
         digits = Integer.digits(custom)
+        unless length(digits) > 2, do: raise "Opcode #{opcode} not long enough"
         opcode = "#{Enum.at(digits, -2)}#{Enum.at(digits, -1)}" |> String.to_integer()
         first_mode = get_mode(Enum.at(digits, -3))
         second_mode = get_mode(Enum.at(digits, -4))
@@ -75,6 +76,7 @@ defmodule Nine do
     p2_v = value(positions, p2, second_m)
     r = write_index(positions, r, third_m)
 
+    debug {:mult, {p1_v, p2_v, p1_v * p2_v, r}}
     result = Map.put(positions, r, p1_v * p2_v)
 
     processor(result, index + 4)
@@ -82,17 +84,18 @@ defmodule Nine do
 
   # Input
   def process([3, p], positions, index, {mode, _, _}) do
-    curr = Process.get(:input_curr)
-    Process.put(:input_curr, curr + 1)
+    # curr = Process.get(:input_curr)
+    # Process.put(:input_curr, curr + 1)
     last_output = Process.get(:curr_output) |> List.wrap() |> List.first()
 
-    next_input = Process.get(:test_input) |> List.wrap() |> Enum.at(curr, last_output)
+    # next_input = Process.get(:test_input) |> List.wrap() |> Enum.at(curr, last_output)
     # IO.inspect "input: #{next_input}, #{Process.get(:curr_program)}"
 
-    val = next_input |> String.trim() |> String.to_integer()
-
+    val = Process.get(:test_input).() |> String.trim() |> String.to_integer()
     p = write_index(positions, p, mode)
     result = Map.put(positions, p, val)
+
+    debug "input: #{val} to #{p}"
 
     processor(result, index + 2)
   end
@@ -134,6 +137,8 @@ defmodule Nine do
     else
       index + 3
     end
+
+    debug {:jif, {p1_v, p2_v, next}}
 
     processor(positions, next)
   end
@@ -179,7 +184,7 @@ defmodule Nine do
   def write_index(_, p, :p), do: p
   def write_index(positions, p, :r), do: p + Map.fetch!(positions, :rb)
 
-  def debug(_terms) do
+  def debug(terms) do
     # IO.inspect(terms, charlists: :as_lists)
   end
 end
