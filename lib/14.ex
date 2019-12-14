@@ -64,12 +64,10 @@ defmodule Fourteen do
     calculate_needs(materials, next_unmet, next_have, ore_count)
   end
 
-  def produce_count(have, need, create) when have < need do
+  def produce_count(have, need, create) do
     count = ceil((need - have) / create)
     {count * create + have, count}
   end
-
-  def produce_count(have, _, _), do: {have, 0}
 
   def materials(input) do
     input
