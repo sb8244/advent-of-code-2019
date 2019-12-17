@@ -1,26 +1,25 @@
 defmodule Sixteen do
-  def solve_2(digits, {count, max}, _) when count == max do
-    digits |> Enum.join()
+  def solve_2(digits, max, first_seven) do
+    reversed = digits |> Enum.drop(first_seven) |> Enum.reverse()
+    do_solve_2(reversed, {0, max})
   end
 
-  def solve_2(digits, {count, max}, back_half_size) do
-    full_length = length(digits)
-    half_length = ceil(full_length / 2)
-    front_size = full_length - back_half_size
+  def do_solve_2(digits, {count, max}) when count == max do
+    Enum.take(digits, -8) |> Enum.reverse() |> Enum.join()
+  end
 
-    rev_digits = Enum.reverse(digits)
-    half_digits = Enum.take(rev_digits, back_half_size)
-    first_half_digits = Enum.take(digits, front_size)
-    {next_back_half_digits, _sum} = Enum.reduce(half_digits, {[], 0}, fn digit, {acc, sum} ->
-      next_sum = sum + digit
-      next_digit = Integer.digits(next_sum) |> List.last()
-      next_acc = [next_digit | acc]
+  def do_solve_2(digits, {count, max}) do
+    {next_digits, _sum} =
+      Enum.reduce(digits, {[], 0}, fn digit, {acc, sum} ->
+        next_sum = sum + digit
+        next_acc = [rem(next_sum, 10) | acc]
 
-      {next_acc, next_sum}
-    end)
+        {next_acc, next_sum}
+      end)
 
-    (first_half_digits ++ next_back_half_digits)
-    |> solve_2({count + 1, max}, back_half_size)
+    next_digits
+    |> Enum.reverse()
+    |> do_solve_2({count + 1, max})
   end
 
   def solve(digits, {count, max}, _) when count == max do
@@ -30,7 +29,7 @@ defmodule Sixteen do
   def solve(digits, {count, max}, pattern \\ [0, 1, 0, -1]) do
     digit_length = length(digits)
 
-    # IO.inspect digits
+    IO.inspect digits
 
     digits
     |> Enum.with_index()

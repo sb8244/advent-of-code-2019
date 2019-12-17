@@ -15,7 +15,6 @@ defmodule SixteenTest do
   test "pt2 testing" do
     digits = Integer.digits(12345678)
     full_digits = Stream.cycle(digits) |> Enum.take(length(digits) * 3)
-    first_seven = Enum.take(digits, 7) |> Integer.undigits()
 
     assert Sixteen.solve(full_digits, {0, 10}) == "142609498794060886940678"
   end
@@ -25,7 +24,7 @@ defmodule SixteenTest do
     full_digits = Stream.cycle(digits) |> Enum.take(length(digits) * 10_000)
     first_seven = Enum.take(digits, 7) |> Integer.undigits()
 
-    assert Sixteen.solve_2(full_digits, {0, 100}, length(full_digits) - first_seven) |> String.graphemes() |> Enum.drop(first_seven) |> Enum.take(8) |> Enum.join() == "84462026"
+    assert Sixteen.solve_2(full_digits, 100, first_seven) == "84462026"
   end
 
   test "pt2" do
@@ -34,6 +33,6 @@ defmodule SixteenTest do
     full_digits = Stream.cycle(digits) |> Enum.take(length(digits) * 10_000)
     first_seven = Enum.take(digits, 7) |> Integer.undigits()
 
-    assert Sixteen.solve_2(full_digits, {0, 100}, length(full_digits) - first_seven) |> String.graphemes() |> Enum.drop(first_seven) |> Enum.take(8) |> Enum.join() == "12482168"
+    assert Sixteen.solve_2(full_digits, 100, first_seven) == "12482168"
   end
 end
