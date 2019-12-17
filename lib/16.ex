@@ -29,7 +29,7 @@ defmodule Sixteen do
   def solve(digits, {count, max}, pattern \\ [0, 1, 0, -1]) do
     digit_length = length(digits)
 
-    IO.inspect digits
+    # IO.inspect digits
 
     digits
     |> Enum.with_index()
