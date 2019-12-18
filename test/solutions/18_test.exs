@@ -237,6 +237,22 @@ defmodule EighteenTest do
     #################################################################################
     """
 
-    assert Eighteen.solve_2(input) == 2946
+    assert Eighteen.solve_2(input) == 1222
+  end
+
+  test "pt1 example" do
+    input = """
+    #############
+    #g#f.D#..h#l#
+    #F###e#E###.#
+    #dCba@#@BcIJ#
+    #############
+    #nK.L@#@G...#
+    #M###N#H###.#
+    #o#m..#i#jk.#
+    #############
+    """
+
+    assert Eighteen.solve_2(input) == 72
   end
 end

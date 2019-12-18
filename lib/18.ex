@@ -3,57 +3,47 @@ defmodule Eighteen do
     def solve(graph, curr) do
       graph = Enum.map(graph, fn {coord, char} -> {coord, List.first(String.to_charlist(char))} end) |> Enum.into(%{})
       keys = Enum.filter(graph, fn {_, char} -> char in (?a..?z) end)
-      key_coords = Enum.map(keys, & elem(&1, 0))
-      # {distance_map, path_map} = distance_between_all_keys(graph, [{curr, ?@} | keys])
 
-      # IO.inspect {path_map, keys}, limit: :infinity
-      # throw :x
-
-      Agent.start_link(fn -> 100_000 end, name: __MODULE__)
-      IO.puts "Starting iteration..."
-
-      start = {[curr], keys, graph}
-      {parents, ended} = bfs([start], %{}, 0, MapSet.new([start]))
-      fill_parents(parents, [], ended, start) |> elem(0)
-      # Enum.map((0..length(keys) - 1), fn i ->
-      #   Task.async(fn ->
-      #     iterate({graph, distance_map, path_map, i}, curr, ["@"], 0, keys, MapSet.new())
-      #   end)
-      # end)
-      # |> Enum.each(& Task.await(&1, :infinity))
+      start = {curr, keys, graph, [], 0}
+      bfs([start], %{}, MapSet.new([start]))
+      # fill_parents(parents, [], ended, [start]) |> elem(0)
     end
 
     def solve_2(graph, currs = [a, b, c, d]) do
       graph = Enum.map(graph, fn {coord, char} -> {coord, List.first(String.to_charlist(char))} end) |> Enum.into(%{})
       keys = Enum.filter(graph, fn {_, char} -> char in (?a..?z) end)
-      key_coords = Enum.map(keys, & elem(&1, 0))
 
       IO.puts "Starting iteration... #{inspect currs}"
 
-      visited = {a, keys, graph}
-      q = [visited]
+      # KEep track of all of the locations and use that to project the next neighbor
+      visited1 = {a, keys, graph, [b, c, d], 0}
+      visited2 = {b, keys, graph, [a, c, d], 0}
+      visited3 = {c, keys, graph, [a, b, d], 0}
+      visited4 = {d, keys, graph, [a, b, c], 0}
+      q = [visited1, visited2, visited3, visited4]
 
-      {parents, ended} = bfs(q, %{}, 0, MapSet.new([visited]))
-      fill_parents(parents, [], ended, visited) |> elem(0) |> IO.inspect()
+      bfs(q, %{}, MapSet.new(q))
     end
 
-    def fill_parents(_parents, path, target, target), do: {length(path), path}
-
-    def fill_parents(parents, path, curr, target) do
-      IO.inspect length(path)
-      parent = Map.fetch!(parents, curr)
-      fill_parents(parents, [elem(parent, 0) | path], parent, target)
+    def fill_parents(parents, path, curr, targets) do
+      if curr in targets do
+        {length(path), path}
+      else
+        IO.inspect {length(path), curr}
+        parent = Map.fetch!(parents, curr)
+        fill_parents(parents, [elem(parent, 0) | path], parent, targets)
+      end
     end
 
-    def bfs(_, [], _parents, cost, remain_keys, _), do: {:fail, cost, remain_keys}
+    def bfs(_, [], _parents, remain_keys, _), do: {:fail, remain_keys}
 
-    # Change this to be a single
-    def bfs([curr_bundle = {curr, remain_keys, graph} | q], parents, cost, discovered) do
+    def bfs([curr_bundle = {curr, remain_keys, graph, others, cost} | q], parents, discovered) do
+      IO.inspect curr
       char = Map.fetch!(graph, curr)
 
       next_remain_keys =
         if char in ?a..?z do
-          IO.inspect "found key #{[char]}, #{length(remain_keys)}"
+          IO.inspect "found key #{[char]}, #{length(remain_keys)}, #{cost}"
           List.delete(remain_keys, {curr, char})
         else
           remain_keys
@@ -74,15 +64,22 @@ defmodule Eighteen do
 
       if length(next_remain_keys) == 0 do
         IO.inspect "DONE"
-        {parents, curr_bundle}
+        # {parents, {curr, remain_keys, graph}}
+        cost
       else
-        neighbors = doored_neighbors(graph, curr) |> Enum.map(fn coord -> {coord, next_remain_keys, next_graph} end)
-        clean_neighbors = Enum.reject(neighbors, fn neighbor -> MapSet.member?(discovered, neighbor) end)
-        next_discovered = Enum.reduce(clean_neighbors, discovered, & MapSet.put(&2, &1))
-        next_parents = Enum.reduce(clean_neighbors, parents, & Map.put(&2, &1, curr_bundle))
+        neighbors =
+          doored_neighbors(graph, curr, others)
+          |> Enum.map(fn {coord, next_others} -> {coord, next_remain_keys, next_graph, next_others, cost + 1} end)
+          |> Enum.reject(fn {_, remaining, _, _, cost} ->
+            length(remaining) > 5 and cost > 50
+          end)
+
+        clean_neighbors = Enum.reject(neighbors, fn {a,b,c,d, _} -> MapSet.member?(discovered, {a,b,c}) end)
+        next_discovered = Enum.reduce(clean_neighbors, discovered, fn {a,b,c,d, _}, acc -> MapSet.put(acc, {a,b,c}) end)
+        # next_parents = Enum.reduce(clean_neighbors, parents, fn {a,b,c,d,_}, acc -> Map.put(acc, {a,b,c}, {curr, remain_keys, graph}) end)
         next_q = q ++ clean_neighbors #Enum.map(clean_neighbors, & elem(&1, 0))
 
-        bfs(next_q, next_parents, cost + 1, next_discovered)
+        bfs(next_q, parents, next_discovered)
       end
     end
 
@@ -157,16 +154,20 @@ defmodule Eighteen do
       |> Enum.filter(& Map.get(graph, &1, ?#) != ?#)
     end
 
-    def doored_neighbors(graph, coords) when is_list(coords) do
-      Enum.flat_map(coords, & doored_neighbors(graph, &1))
+    def doored_neighbors(graph, a, [b, c, d]) do
+      (doored_neighbors(graph, a, []) |> Enum.map(fn {coords, _} -> {coords, [b, c, d]} end)) ++
+      (doored_neighbors(graph, b, []) |> Enum.map(fn {coords, _} -> {coords, [a, c, d]} end)) ++
+      (doored_neighbors(graph, c, []) |> Enum.map(fn {coords, _} -> {coords, [a, b, d]} end)) ++
+      (doored_neighbors(graph, d, []) |> Enum.map(fn {coords, _} -> {coords, [a, b, c]} end))
     end
 
-    def doored_neighbors(graph, {c, r}) do
+    def doored_neighbors(graph, {c, r}, []) do
       [{c - 1, r}, {c + 1, r}, {c, r - 1}, {c, r + 1}]
       |> Enum.filter(fn coord ->
         char = Map.get(graph, coord, ?#)
         char != ?# and char not in (?A..?Z)
       end)
+      |> Enum.map(fn coord -> {coord, []} end)
     end
   end
 
