@@ -8,7 +8,7 @@ defmodule EighteenTest do
     #########
     """
 
-    assert Eighteen.solve(input) == 8
+    assert length(Eighteen.solve(input)) - 1 == 8
   end
 
   test "example 2" do
@@ -20,7 +20,7 @@ defmodule EighteenTest do
     ########################
     """
 
-    assert Eighteen.solve(input) == 86
+    assert length(Eighteen.solve(input)) - 1 == 86
   end
 
   test "example 4" do
@@ -32,7 +32,7 @@ defmodule EighteenTest do
     ########################
     """
 
-    assert Eighteen.solve(input) == 132
+    assert length(Eighteen.solve(input)) - 1 == 132
   end
 
   test "example 3" do
@@ -48,21 +48,21 @@ defmodule EighteenTest do
     #################
     """
 
-    assert Eighteen.solve(input) == 136
+    assert length(Eighteen.solve(input)) - 1 == 136
   end
 
-  test "example 5" do
-    input ="""
-    ########################
-    #@..............ac.GI.b#
-    ###d#e#f################
-    ###A#B#C################
-    ###g#h#i################
-    ########################
-    """
+  # test "example 5" do
+  #   input ="""
+  #   ########################
+  #   #@..............ac.GI.b#
+  #   ###d#e#f################
+  #   ###A#B#C################
+  #   ###g#h#i################
+  #   ########################
+  #   """
 
-    Eighteen.solve(input)
-  end
+  #   Eighteen.solve(input)
+  # end
 
   test "pt1" do
     input = """
@@ -149,7 +149,7 @@ defmodule EighteenTest do
     #################################################################################
     """
 
-    assert Eighteen.solve(input) == 2946
+    assert length(Eighteen.solve(input)) - 1 == 2946
   end
 
   test "pt2" do
@@ -237,22 +237,24 @@ defmodule EighteenTest do
     #################################################################################
     """
 
-    assert Eighteen.solve_2(input) == 1222
+    assert length(Eighteen.solve_2(input)) - 1 == 1222
   end
 
-  # test "pt2 example" do
-  #   input = """
-  #   #############
-  #   #g#f.D#..h#l#
-  #   #F###e#E###.#
-  #   #dCba@#@BcIJ#
-  #   #############
-  #   #nK.L@#@G...#
-  #   #M###N#H###.#
-  #   #o#m..#i#jk.#
-  #   #############
-  #   """
+  test "pt2 example" do
+    input = """
+    #############
+    #g#f.D#..h#l#
+    #F###e#E###.#
+    #dCba@#@BcIJ#
+    #############
+    #nK.L@#@G...#
+    #M###N#H###.#
+    #o#m..#i#jk.#
+    #############
+    """
 
-  #   assert Eighteen.solve_2(input) == 72
-  # end
+    path = Eighteen.solve_2(input)
+    path |> IO.inspect(limit: :infinity)
+    assert length(path) - 1 == 72
+  end
 end
