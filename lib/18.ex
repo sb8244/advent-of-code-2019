@@ -39,6 +39,7 @@ defmodule Eighteen do
 
     def bfs([{curr, remain_keys, graph, others, cost} | q], parents, discovered) do
       char = Map.fetch!(graph, curr)
+      # IO.inspect {curr, to_string([char])}
 
       next_remain_keys =
         if char in ?a..?z do
@@ -48,18 +49,18 @@ defmodule Eighteen do
           remain_keys
         end
 
-      next_graph =
-        if char in ?a..?z do
-          door = char - 32
+      # next_graph =
+      #   if char in ?a..?z do
+      #     door = char - 32
 
-          Enum.map(graph, fn
-            {coord, ^door} -> {coord, ?.}
-            # {coord, ^char} -> {coord, ?.}
-            ret -> ret
-          end) |> Enum.into(%{})
-        else
-          graph
-        end
+      #     Enum.map(graph, fn
+      #       {coord, ^door} -> {coord, ?.}
+      #       # {coord, ^char} -> {coord, ?.}
+      #       ret -> ret
+      #     end) |> Enum.into(%{})
+      #   else
+      #     graph
+      #   end
 
       if length(next_remain_keys) == 0 do
         # IO.inspect "DONE"
@@ -67,8 +68,8 @@ defmodule Eighteen do
         cost
       else
         neighbors =
-          doored_neighbors(graph, curr, others)
-          |> Enum.map(fn {coord, next_others} -> {coord, next_remain_keys, next_graph, next_others, cost + 1} end)
+          doored_neighbors(graph, curr, others, next_remain_keys)
+          |> Enum.map(fn {coord, next_others} -> {coord, next_remain_keys, graph, next_others, cost + 1} end)
 
         clean_neighbors = Enum.reject(neighbors, fn {a,b,_c,_d,_} -> MapSet.member?(discovered, {a,b}) end)
         next_discovered = Enum.reduce(clean_neighbors, discovered, fn {a,b,_c,_d, _}, acc -> MapSet.put(acc, {a,b}) end)
@@ -79,18 +80,22 @@ defmodule Eighteen do
       end
     end
 
-    def doored_neighbors(graph, a, [b, c, d]) do
-      (doored_neighbors(graph, a, []) |> Enum.map(fn {coords, _} -> {coords, [b, c, d]} end)) ++
-      (doored_neighbors(graph, b, []) |> Enum.map(fn {coords, _} -> {coords, [a, c, d]} end)) ++
-      (doored_neighbors(graph, c, []) |> Enum.map(fn {coords, _} -> {coords, [a, b, d]} end)) ++
-      (doored_neighbors(graph, d, []) |> Enum.map(fn {coords, _} -> {coords, [a, b, c]} end))
+    def doored_neighbors(graph, a, [b, c, d], remain_keys) do
+      (doored_neighbors(graph, a, [], remain_keys) |> Enum.map(fn {coords, _} -> {coords, [b, c, d]} end)) ++
+      (doored_neighbors(graph, b, [], remain_keys) |> Enum.map(fn {coords, _} -> {coords, [a, c, d]} end)) ++
+      (doored_neighbors(graph, c, [], remain_keys) |> Enum.map(fn {coords, _} -> {coords, [a, b, d]} end)) ++
+      (doored_neighbors(graph, d, [], remain_keys) |> Enum.map(fn {coords, _} -> {coords, [a, b, c]} end))
     end
 
-    def doored_neighbors(graph, {c, r}, []) do
+    def doored_neighbors(graph, {c, r}, [], remain_keys) do
+      remain_keys = Enum.map(remain_keys, &elem(&1, 1))
+
       [{c - 1, r}, {c + 1, r}, {c, r - 1}, {c, r + 1}]
       |> Enum.filter(fn coord ->
         char = Map.get(graph, coord, ?#)
-        char != ?# and char not in (?A..?Z)
+        match = char == ?. or char == ?@ or char in (?a..?z) or (char in (?A..?Z) and char+32 not in remain_keys)
+        # if char in (?A..?Z), do: IO.inspect {coord, to_string([char]), match, remain_keys}
+        match
       end)
       |> Enum.map(fn coord -> {coord, []} end)
     end
