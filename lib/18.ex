@@ -43,7 +43,7 @@ defmodule Eighteen do
 
     dist = Map.put(dist, source, 0)
 
-    {graph, dist, prev, from_coord} = djikstra_process([{0, graph}], {dist, prev, q}, nil)
+    {graph, dist, prev, from_coord} = djikstra_process(graph, {dist, prev, q}, nil)
     acc = [{dist, prev, from_coord, source} | acc]
     # IO.inspect {dist, prev, from_coord, no_keys_or_doors?(graph)}
     IO.inspect {source, from_coord}
@@ -51,13 +51,12 @@ defmodule Eighteen do
     if no_keys_or_doors?(graph) do
       acc
     else
-      throw "should hit in 1 pass"
-      # djikstra(graph, from_coord, acc)
+      djikstra(graph, from_coord, acc)
     end
   end
 
-  def djikstra_process(time_graph, {dist, prev, q}, from_coord) do
-    if MapSet.size(q) == 0 do
+  def djikstra_process(graph, {dist, prev, q}, from_coord) do
+    if MapSet.size(q) == 0 or no_keys_or_doors?(graph) do
       {graph, dist, prev, from_coord}
     else
       u =
@@ -69,11 +68,11 @@ defmodule Eighteen do
         |> List.first()
 
       u_dist = Map.fetch!(dist, u)
-      current_time = u_dist
 
       if u_dist > 1_000_000 do
         {graph, dist, prev, from_coord}
       else
+        IO.inspect {"process", u, u_dist, Map.fetch!(graph, u)}
         q = MapSet.delete(q, u)
 
         {graph, change_coord} = modify_pickup(graph, u)
@@ -82,7 +81,7 @@ defmodule Eighteen do
         {dist, prev} =
           neighbors(graph, q, u)
           |> Enum.reduce({dist, prev}, fn coord, {dist, prev} ->
-            alt = u_dist + segment_size(graph, current_time, coord)
+            alt = u_dist + segment_size(graph, u, coord)
 
             if alt < Map.fetch!(dist, coord) do
               dist = Map.put(dist, coord, alt)
@@ -98,7 +97,7 @@ defmodule Eighteen do
     end
   end
 
-  def segment_size(graph, current_time, coord) do
+  def segment_size(graph, _u, coord) do
     [to] = Map.fetch!(graph, coord) |> String.to_charlist()
 
     if to in (?A..?Z) or to == ?# do
