@@ -30,112 +30,41 @@ defmodule Eighteen do
       fill_parents(parents, [elem(parent, 0) | path], parent, target)
     end
 
-    def djikstra(source = {_, _, graph}, acc) do
-      {dist, prev, q} = Enum.reduce(graph, {%{}, %{}, MapSet.new()}, fn {coord, char}, {dist, prev, q} ->
-        dist = Map.put(dist, coord, 999_999_999_999_999)
-        q = MapSet.put(q, coord)
-        {dist, prev, q}
-      end)
-
-      dist = Map.put(dist, source, 0)
-
-      {dist, prev} = djikstra_process({dist, prev, q})
-    end
-
-    def djikstra_process({dist, prev, q}) do
-      if MapSet.size(q) == 0 do
-        {dist, prev}
-      else
-        u_bundle = {u, remain_keys, graph} =
-          q
-          |> MapSet.to_list()
-          |> Enum.sort_by(fn {coord, _, _} ->
-            Map.fetch!(dist, coord)
-          end)
-          |> List.first()
-
-        if remain_keys == [] do
-          {dist, prev}
-        else
-          u_dist = Map.fetch!(dist, u)
-
-          if u_dist > 1_000_000 do
-            :fail
-          else
-            q = MapSet.delete(q, u)
-
-            char = Map.fetch!(graph, u)
-            next_remain_keys = if char in ?a..?z do
-              IO.inspect "found key #{[char]}, #{length(remain_keys)}"
-              List.delete(remain_keys, {curr, char})
-            else
-              remain_keys
-            end
-
-            next_graph = if char in ?a..?z do
-              door = char - 32
-
-              Enum.map(graph, fn
-                {coord, ^door} -> {coord, ?.}
-                # {coord, ^char} -> {coord, ?.}
-                ret -> ret
-              end) |> Enum.into(%{})
-            else
-              graph
-            end
-
-            neighbors = doored_neighbors(graph, u) |> Enum.map(fn coord -> {coord, next_remain_keys, next_graph} end)
-
-            {dist, prev} =
-              neighbors
-              |> Enum.reduce({dist, prev}, fn {coord, _, _}, {dist, prev} ->
-                alt = u_dist + 1
-
-                if alt < Map.fetch!(dist, coord) do
-                  dist = Map.put(dist, coord, alt)
-                  prev = Map.put(prev, coord, u)
-                  {dist, prev}
-                else
-                  {dist, prev}
-                end
-              end)
-
-            djikstra_process({dist, prev, q})
-          end
-        end
-      end
-    end
-
     def bfs(_, [], _parents, cost, remain_keys, _), do: {:fail, cost, remain_keys}
 
-    def bfs([curr_bundle = {curr, remain_keys, graph} | q], parents, cost, discovered) do
-      char = Map.fetch!(graph, curr)
+    def bfs([curr_bundle = {currs, remain_keys, graph} | q], parents, cost, discovered) do
+      IO.inspect {:currs, currs}
+      next_remain_keys = Enum.reduce(currs, remain_keys, fn curr, keys ->
+        IO.inspect curr
+        char = Map.fetch!(graph, curr)
+        if char in ?a..?z do
+          IO.inspect "found key #{[char]}, #{length(remain_keys)}"
+          List.delete(keys, {curr, char})
+        else
+          keys
+        end
+      end)
 
-      next_remain_keys = if char in ?a..?z do
-        IO.inspect "found key #{[char]}, #{length(remain_keys)}"
-        List.delete(remain_keys, {curr, char})
-      else
-        remain_keys
-      end
+      next_graph = Enum.reduce(currs, graph, fn curr, graph ->
+        char = Map.fetch!(graph, curr)
+        if char in ?a..?z do
+          door = char - 32
 
-      next_graph = if char in ?a..?z do
-        door = char - 32
-
-        Enum.map(graph, fn
-          {coord, ^door} -> {coord, ?.}
-          # {coord, ^char} -> {coord, ?.}
-          ret -> ret
-        end) |> Enum.into(%{})
-      else
-        graph
-      end
+          Enum.map(graph, fn
+            {coord, ^door} -> {coord, ?.}
+            # {coord, ^char} -> {coord, ?.}
+            ret -> ret
+          end) |> Enum.into(%{})
+        else
+          graph
+        end
+      end)
 
       if length(next_remain_keys) == 0 do
         IO.inspect "DONE"
         {parents, curr_bundle}
       else
-        neighbors = doored_neighbors(graph, curr) |> Enum.map(fn coord -> {coord, next_remain_keys, next_graph} end)
-        # IO.inspect {curr, Enum.map(neighbors, &elem(&1, 0))}
+        neighbors = doored_neighbors(graph, currs) |> Enum.map(fn coord -> {coord, next_remain_keys, next_graph} end)
         clean_neighbors = Enum.reject(neighbors, fn neighbor -> MapSet.member?(discovered, neighbor) end)
         next_discovered = Enum.reduce(clean_neighbors, discovered, & MapSet.put(&2, &1))
         next_parents = Enum.reduce(clean_neighbors, parents, & Map.put(&2, &1, curr_bundle))
@@ -143,75 +72,6 @@ defmodule Eighteen do
 
         bfs(next_q, next_parents, cost + 1, next_discovered)
       end
-    end
-
-    def iterate({graph, distm, pathm, start_at}, curr, path = [from | _], path_cost, remain_keys, seen_paths) do
-      # IO.inspect path
-      if remain_keys == [] do
-        # IO.inspect {path_cost, path}
-        if path_cost <= Agent.get(__MODULE__, & &1) do
-          Agent.update(__MODULE__, fn old ->
-            min(path_cost, old)
-          end)
-
-          IO.inspect {path_cost, path}
-        end
-
-        seen_paths
-      else
-        space =
-          (if length(path) == 1, do: [Enum.at(remain_keys, start_at)], else: remain_keys)
-          |> Enum.flat_map(fn {coord, key} ->
-            to = to_string([key])
-            valid_paths =
-              Map.fetch!(pathm, {from, to})
-              |> Enum.reject(fn {path_length, gates, keys} ->
-                # IO.inspect {from, to, to_string(path), Enum.map(remain_keys, & elem(&1, 1)) |> to_string(), keys}
-                Enum.any?(gates, fn gate_char ->
-                  Enum.find(remain_keys, fn {_, check_char} ->
-                    gate_char == check_char - 32
-                  end)
-                end) || Enum.any?(keys, fn key_char ->
-                  Enum.find(remain_keys, fn {_, check_char} ->
-                    key_char == check_char
-                  end)
-                end)
-              end)
-
-            # dist = Enum.map(valid_paths, & elem(&1, 0)) |> Enum.sort() |> List.first()
-
-            # IO.inspect {from, to, valid_paths}
-
-            Enum.map(valid_paths, fn {dist, _g, _k} ->
-              {dist, coord, key, to_string([key])}
-            end)
-          end)
-          |> Enum.reject(& elem(&1, 0) == nil)
-          |> Enum.sort_by(& elem(&1, 0))
-
-        # if length(space) > 6, do: IO.inspect {"Space is #{length(space)}", path, remain_keys}
-
-        space
-        # |> Enum.take(max(ceil(length(remain_keys) / 2), 2))
-        |> Enum.reduce(seen_paths, fn {dist, next_curr, char, str}, seen_paths ->
-          graph = case Enum.find(graph, fn {_, door?} -> door? == char - 32 end) do
-            nil -> graph
-            {ret, _} -> Map.put(graph, ret, ".")
-          end
-
-          next_path = [str | path]
-          # IO.inspect to_string(next_path)
-          next_cost = path_cost + dist
-          if MapSet.member?(seen_paths, {next_path, next_cost}) do
-            # IO.puts "I've seen it already: #{next_path} #{next_cost}"
-            seen_paths
-          else
-            seen_paths = MapSet.put(seen_paths, {next_path, next_cost})
-            iterate({graph, distm, pathm, start_at}, next_curr, next_path, next_cost, List.delete(remain_keys, {next_curr, char}), seen_paths)
-          end
-        end)
-      end
-      # IO.inspect {path_cost, length(path), path}
     end
 
     def distance_between_all_keys(graph, keys) do
@@ -300,6 +160,14 @@ defmodule Eighteen do
     graph = Map.put(graph, curr, ".")
 
     TryTwo.solve(graph, curr)
+  end
+
+  def solve_2(input) do
+    graph = parse_input(input)
+    entries = Enum.filter(graph, fn {_coords, val} -> val == "@" end) |> Enum.map(& elem(&1, 0))
+    graph = Enum.reduce(entries, graph, fn curr, graph -> Map.put(graph, curr, ".") end) |> Enum.into(%{})
+
+    TryTwo.solve_2(graph, entries)
   end
 
   def solve(input) do
