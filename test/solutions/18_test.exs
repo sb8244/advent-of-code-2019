@@ -240,7 +240,7 @@ defmodule EighteenTest do
     assert Eighteen.solve_2(input) == 1222
   end
 
-  test "pt1 example" do
+  test "pt2 example" do
     input = """
     #############
     #g#f.D#..h#l#

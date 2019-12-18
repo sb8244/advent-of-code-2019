@@ -35,10 +35,9 @@ defmodule Eighteen do
       end
     end
 
-    def bfs(_, [], _parents, remain_keys, _), do: {:fail, remain_keys}
+    def bfs([], _parents, _discovered), do: {:fail}
 
     def bfs([curr_bundle = {curr, remain_keys, graph, others, cost} | q], parents, discovered) do
-      IO.inspect curr
       char = Map.fetch!(graph, curr)
 
       next_remain_keys =
@@ -70,12 +69,9 @@ defmodule Eighteen do
         neighbors =
           doored_neighbors(graph, curr, others)
           |> Enum.map(fn {coord, next_others} -> {coord, next_remain_keys, next_graph, next_others, cost + 1} end)
-          |> Enum.reject(fn {_, remaining, _, _, cost} ->
-            length(remaining) > 5 and cost > 50
-          end)
 
-        clean_neighbors = Enum.reject(neighbors, fn {a,b,c,d, _} -> MapSet.member?(discovered, {a,b,c}) end)
-        next_discovered = Enum.reduce(clean_neighbors, discovered, fn {a,b,c,d, _}, acc -> MapSet.put(acc, {a,b,c}) end)
+        clean_neighbors = Enum.reject(neighbors, fn {a,b,c,d,_} -> MapSet.member?(discovered, {a,b}) end)
+        next_discovered = Enum.reduce(clean_neighbors, discovered, fn {a,b,c,d, _}, acc -> MapSet.put(acc, {a,b}) end)
         # next_parents = Enum.reduce(clean_neighbors, parents, fn {a,b,c,d,_}, acc -> Map.put(acc, {a,b,c}, {curr, remain_keys, graph}) end)
         next_q = q ++ clean_neighbors #Enum.map(clean_neighbors, & elem(&1, 0))
 
