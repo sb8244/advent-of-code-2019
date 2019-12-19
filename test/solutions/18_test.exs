@@ -152,6 +152,11 @@ defmodule EighteenTest do
     assert length(Eighteen.solve(input)) - 1 == 2946
   end
 
+  test "pt1 fred" do
+    input = File.read!("day18_fred.in")
+    assert length(Eighteen.solve(input)) - 1 == 5406
+  end
+
   test "pt2" do
     input = """
     #################################################################################
@@ -238,6 +243,11 @@ defmodule EighteenTest do
     """
 
     assert length(Eighteen.solve_2(input)) - 1 == 1222
+  end
+
+  test "pt2 fred" do
+    input = File.read!("day18_fred2.in")
+    assert length(Eighteen.solve_2(input)) - 1 == 1938
   end
 
   test "pt2 example" do
