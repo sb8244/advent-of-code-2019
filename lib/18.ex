@@ -5,7 +5,9 @@ defmodule Eighteen do
       keys = Enum.filter(graph, fn {_, char} -> char in (?a..?z) end)
 
       start = {curr, keys, graph, [], [curr]}
-      bfs([start], %{}, MapSet.new([start]))
+      q = :queue.new()
+      q = :queue.in(start, q)
+      bfs(q, MapSet.new([start]))
     end
 
     def solve_2(graph, [a, b, c, d]) do
@@ -19,54 +21,44 @@ defmodule Eighteen do
       visited2 = {b, keys, graph, [a, c, d], [b]}
       visited3 = {c, keys, graph, [a, b, d], [c]}
       visited4 = {d, keys, graph, [a, b, c], [d]}
-      q = [visited1, visited2, visited3, visited4]
+      q = :queue.new()
+      q = :queue.in(visited1, q)
+      q = :queue.in(visited2, q)
+      q = :queue.in(visited3, q)
+      q = :queue.in(visited4, q)
 
-      bfs(q, %{}, MapSet.new(q))
+      bfs(q, MapSet.new())
     end
 
-    def bfs([], _parents, _discovered), do: {:fail}
 
-    def bfs([{curr, remain_keys, graph, others, cost} | q], parents, discovered) do
-      char = Map.fetch!(graph, curr)
-      rest = Enum.map(q, & elem(&1, 0))
-      # IO.inspect {curr, to_string([char]), rest}
+    def bfs(q, discovered) do
+      case :queue.out(q) do
+        {:empty, _} -> :fail
+        {{:value, {curr, remain_keys, graph, others, cost}}, q} ->
+          char = Map.fetch!(graph, curr)
 
-      next_remain_keys =
-        if char in ?a..?z do
-          # IO.inspect "found key #{[char]}, #{length(remain_keys)}, #{cost}"
-          List.delete(remain_keys, {curr, char})
-        else
-          remain_keys
-        end
+          next_remain_keys =
+            if char in ?a..?z do
+              # IO.inspect "found key #{[char]}, #{length(remain_keys)}, #{length(cost)}"
+              List.delete(remain_keys, {curr, char})
+            else
+              remain_keys
+            end
 
-      # next_graph =
-      #   if char in ?a..?z do
-      #     door = char - 32
+          if length(next_remain_keys) == 0 do
+            # IO.inspect "DONE"
+            cost
+          else
+            neighbors =
+              doored_neighbors(graph, curr, others, next_remain_keys)
+              |> Enum.map(fn {coord, next_others} -> {coord, next_remain_keys, graph, next_others, [coord | cost]} end)
 
-      #     Enum.map(graph, fn
-      #       {coord, ^door} -> {coord, ?.}
-      #       # {coord, ^char} -> {coord, ?.}
-      #       ret -> ret
-      #     end) |> Enum.into(%{})
-      #   else
-      #     graph
-      #   end
+            clean_neighbors = Enum.reject(neighbors, fn {a,b,_c,_d,_} -> MapSet.member?(discovered, {a,b}) end)
+            next_discovered = Enum.reduce(clean_neighbors, discovered, fn {a,b,_c,_d, _}, acc -> MapSet.put(acc, {a,b}) end)
+            next_q = Enum.reduce(clean_neighbors, q, & :queue.in(&1, &2))
 
-      if length(next_remain_keys) == 0 do
-        # IO.inspect "DONE"
-        # {parents, {curr, remain_keys, graph}}
-        cost
-      else
-        neighbors =
-          doored_neighbors(graph, curr, others, next_remain_keys)
-          |> Enum.map(fn {coord, next_others} -> {coord, next_remain_keys, graph, next_others, [coord | cost]} end)
-
-        clean_neighbors = Enum.reject(neighbors, fn {a,b,_c,_d,_} -> MapSet.member?(discovered, {a,b}) end)
-        next_discovered = Enum.reduce(clean_neighbors, discovered, fn {a,b,_c,_d, _}, acc -> MapSet.put(acc, {a,b}) end)
-        # next_parents = Enum.reduce(clean_neighbors, parents, fn {a,b,c,d,_}, acc -> Map.put(acc, {a,b,c}, {curr, remain_keys, graph}) end)
-        next_q = q ++ clean_neighbors #Enum.map(clean_neighbors, & elem(&1, 0))
-
-        bfs(next_q, parents, next_discovered)
+            bfs(next_q, next_discovered)
+          end
       end
     end
 
