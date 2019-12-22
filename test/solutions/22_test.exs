@@ -39,36 +39,34 @@ defmodule TwentyTwoTest do
     assert TwentyTwo.solve(deck, input) == [0, 3, 6, 9, 2, 5, 8, 1, 4, 7]
   end
 
-  test "pt1" do
+  test "pt1 (rewrote for pt2 based on reddit thread)" do
     input = File.read!("22.in") |> String.trim()
-    deck = (0..10006) |> Enum.into([])
-    assert Enum.find_index(deck, & &1 == 2019) == 2019
+    deck = {offset, increment} = TwentyTwo.solve_2(10007, input, 1)
+    assert offset = 10053119434732068746930192007922504334219971109549206493954398063905060114936306625769742478339344360889755819120565363834100219006540476897087013
+    assert increment = 7663208623171456538450488294964240044656124160182652527660130919309173576717976079401113364929105526531315727625505984742485415936819200000000
 
-    deck = TwentyTwo.solve(deck, input)
-    # deck |> IO.inspect(limit: :infinity)
-    assert Enum.find_index(deck, & &1 == 2019) == 4684
+    assert Enum.find(0..10006, fn i ->
+      get(offset, increment, i, 10007) == 2019
+    end) == 4684
+
+    # deck = (0..10006) |> Enum.into([])
+    # assert Enum.find_index(deck, & &1 == 2019) == 2019
+
+    # deck = TwentyTwo.solve_2(deck, input)
+    # # deck |> IO.inspect(limit: :infinity)
+    # assert Enum.find_index(deck, & &1 == 2019) == 4684
   end
 
+  # Followed along with https://www.reddit.com/r/adventofcode/comments/ee0rqi/2019_day_22_solutions/fbnkaju/ to get
+  # the right answer. Had to implement pow/3 that python gives for free into Elixir.
   test "pt2" do
     input = File.read!("22.in") |> String.trim()
+    {offset, increment} = TwentyTwo.solve_2(119315717514047, input, 101741582076661)
 
-    Enum.each((10006..10006), fn max ->
-      deck = (0..max) |> Enum.into([])
+    assert get(offset, increment, 2020, 119315717514047) == 452290953297
+  end
 
-      deck = TwentyTwo.solve(deck, input)
-      first = Enum.at(deck, 2020)
-      if length(deck) - 1 == max do
-        if first == max do
-          IO.puts "SAME: #{max}, #{first}"
-        else
-          IO.puts "#{max}, #{first}"
-        end
-      end
-    end)
-
-    # 100 => 86
-    # 101 => 94
-    # 102 => 81
-    # 103 => 93
+  def get(offset, increment, i, size) do
+    rem((offset + i * increment), size)
   end
 end
