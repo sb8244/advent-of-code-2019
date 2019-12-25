@@ -25,4 +25,27 @@ defmodule FinalTest do
 
     Final.computer(@program)
   end
+
+  # Input:inv
+
+  # Items in your inventory:
+  # - hologram
+  # - space law space brochure
+  # - mutex
+  # - manifold
+
+  # Command?
+  # Input:south
+
+
+
+  # == Pressure-Sensitive Floor ==
+  # Analyzing...
+
+  # Doors here lead:
+  # - north
+
+  # A loud, robotic voice says "Analysis complete! You may proceed." and you enter the cockpit.
+  # Santa notices your small droid, looks puzzled for a moment, realizes what has happened, and radios your ship directly.
+  # "Oh, hello! You should be able to get in by typing 262848 on the keypad at the main airlock."
 end
